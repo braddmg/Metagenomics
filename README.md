@@ -102,8 +102,8 @@ plasx predict \
 done
 ```
 ## Detecting antibiotic resistance genes (ARGs)
-We can detect ARgs from fasta files with [ABRicate](https://github.com/tseemann/abricate)
-In this example we employ the [CARD](https://card.mcmaster.ca) database, but you can find many different databases in the ABRicate tool. 
+We can detect ARGs from fasta files with [ABRicate](https://github.com/tseemann/abricate)
+In this example, we employ the [CARD](https://card.mcmaster.ca) database, ABRicate supports several other databases. 
 
 ```bash
 for i in `ls -1 *.fa | sed 's/.fa//'`
@@ -112,8 +112,8 @@ abricate $i\.fa --db card > $i\.card
 ```
 
 ## Assigning taxonomy to metagenomic contigs
-For this labor we will use [Kaiju](https://github.com/bioinformatics-centre/kaiju) tool. It allows to assign the closest taxonomy to each contig in a metagenomic assembly using different databases. 
-In this example we will employ the SwissProt database. To see how to index or download a databse see the tutorial in the [Kaiju github repository](https://github.com/bioinformatics-centre/kaiju).
+For assigning taxonomy to metagenomic contigs we will use [Kaiju](https://github.com/bioinformatics-centre/kaiju) tool. This tool assigns the closest taxonomy to each contig in a metagenomic assembly using protein-level classification and various databases. 
+In this example we will employ the SwissProt database. For instructions on indexing or downloading databases, refer to the [Kaiju github repository](https://github.com/bioinformatics-centre/kaiju).
 ```bash
 kaiju -z 32 -t database/swissprot_nodes.dmp -f database/kaiju_db_refseq.fmi -i metagenomes.fa -o kaiju.out -v
 ```
