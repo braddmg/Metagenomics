@@ -1,5 +1,5 @@
 # Metagenomics
-Pipeline for metagnomic analyses of water samples
+Pipeline for metagenomic analyses of water samples
 
 ## Quality control
 First step is to remove wuality control reads. For this we used fastp.
