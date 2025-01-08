@@ -85,9 +85,6 @@ anvi-run-pfams -T 32 --pfam-data-dir /work/bmendoza/Tesis/Data/plasmids/anvio/Pf
 anvi-export-functions --annotation-sources COG14_FUNCTION,Pfam -c $i.db -o $i-cogs-and-pfams.txt
 done
 
-module purge
-module load miniconda/PlasX-MobMess
-
 for i in `ls *fasta | awk 'BEGIN{FS=".fasta"}{print $1}'`
 do
 plasx search_de_novo_families \
