@@ -34,14 +34,14 @@ Kraken2 generates reports in kreport extensio. We will use this files to create 
 ```bash
 for i in `ls -1 *.kreport | sed 's/.kreport//' `; do bracken -r 100 -i $i\.kreport -o bracken/$i\.bracken -d /data/databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/bracken; done
 ```
-In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script combine_bracken_outputs: https://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.pyhttps://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.py
+In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script combine_bracken_outputs: [combine bracken outputs](https://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.pyhttps://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.py) 
 
 ```bash
 python combine_bracken_outputs.py --files *.bracken -o bracken_results.tsv
 ```
 The result of this file will be a matrix where rowas are taxa associated to each read, the columns are the samples and the values is the total and fraction of reads assigned. 
 We can convert this file into a phyloseq object in R to performe diversity analyses. 
-Please see https://github.com/braddmg/b2p for more information. And additional microbial diversity analyses can be found here: 
+Please see [b2p github repository](https://github.com/braddmg/b2p) for more information. 
 
 ## Metagenomic Coassembly
 
