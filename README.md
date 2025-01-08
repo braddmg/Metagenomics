@@ -34,7 +34,7 @@ Kraken2 generates reports in kreport extension. We will use this files to create
 ```bash
 for i in `ls -1 *.kreport | sed 's/.kreport//' `; do bracken -r 100 -i $i\.kreport -o bracken/$i\.bracken -d /data/databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/bracken; done
 ```
-In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script combine_bracken_outputs: [combine bracken outputs](https://github.com/jenniferlu717/Bracken/tree/master/analysis_scripts) 
+In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script [combine_bracken_outputs.py](https://github.com/jenniferlu717/Bracken/tree/master/analysis_scripts) 
 
 ```bash
 python combine_bracken_outputs.py --files *.bracken -o bracken_results.tsv
