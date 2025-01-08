@@ -45,7 +45,7 @@ Please see https://github.com/braddmg/b2p for more information. And additional m
 
 ## Metagenomic Coassembly
 
-filtered samples will be used to generate a coassembly/assembly of metagenomes. 
+Filtered samples will be used to generate a coassembly/assembly of metagenomes. 
 We can use Megahit for this purpose and here is an example of a coassembly with three different samples, using both forward and reverse files. 
 ```bash
 megahit -1 S035_filtered.1.fq.gz,S036_filtered.1.fq.gz,S037_filtered.1.fq.gz -2  S035_filtered.2.fq.gz,S036_filtered.2.fq.gz,S037_filtered.2.fq.gz --k-list 33,55,77,99,127 -m 512000000000 -t 32 -o Megahit/S1
@@ -53,3 +53,57 @@ megahit -1 S035_filtered.1.fq.gz,S036_filtered.1.fq.gz,S037_filtered.1.fq.gz -2 
 The result (contigs) will be saved in the folder Megahit/S1
 
 ## Evaluating coassembly
+
+Assembled contigs can be evaluated using MetaQuast, which provides quality assessment based on alignment and assembly metrics. 
+To process all samples efficiently, locate the FASTA files (.fasta) and use the following command within a loop:
+```bash
+for i in `ls -1 *.fasta | sed 's/.fasta//'`
+do
+metaquast.py -L -s $i\.fasta -o QUAST/$i/ --min-contig 500
+done
+```
+## Identifiying plasmidic contigs
+
+There are multiple tools available for identifying plasmidic contigs in metagenomic data. In this workflow, we will use PlasX, a machine learning-based software designed for plasmid detection:
+[PlasX GitHub Repository](https://github.com/michaelkyu/PlasX)
+The following command processes all samples in FASTA format, filters out contigs shorter than 500 bp, annotates them using Anvi’o with the COG14 and Pfam databases, and assigns a PlasX score to each contig: 
+```bash
+for i in `ls *fasta | awk 'BEGIN{FS=".fasta"}{print $1}'`
+do
+anvi-script-reformat-fasta $i.fasta \
+                           -o $i.fa \
+                           -l 500 --seq-type NT --simplify-names --prefix $i
+anvi-gen-contigs-database -f $i.fa -o $i.db
+anvi-run-hmms -c $i.db
+anvi-export-gene-calls --gene-caller prodigal -c $i.db -o $i-gene-calls.txt
+done
+
+for i in `ls *db | awk 'BEGIN{FS=".db"}{print $1}'`
+do
+anvi-run-ncbi-cogs -T 32 --cog-version COG14 --cog-data-dir /work/databases/anvio/COG_2014 -c $i.db
+anvi-run-pfams -T 32 --pfam-data-dir /work/bmendoza/Tesis/Data/plasmids/anvio/Pfam_v32 -c $i.db
+anvi-export-functions --annotation-sources COG14_FUNCTION,Pfam -c $i.db -o $i-cogs-and-pfams.txt
+done
+
+module purge
+module load miniconda/PlasX-MobMess
+
+for i in `ls *fasta | awk 'BEGIN{FS=".fasta"}{print $1}'`
+do
+plasx search_de_novo_families \
+    -g $i-gene-calls.txt \
+    -o $i-de-novo-families.txt \
+    --threads 32 \
+    --splits 32 \
+    --overwrite
+
+plasx predict \
+    -a $i-cogs-and-pfams.txt $i-de-novo-families.txt \
+    -g $i-gene-calls.txt \
+    -o $i-scores.txt \
+    --overwrite
+done
+```
+
+
+
