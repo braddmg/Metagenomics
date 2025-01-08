@@ -2,7 +2,7 @@
 Pipeline for metagenomic analyses of water samples
 
 ## Quality control
-First step is to remove wuality control reads. For this we used fastp.
+The first step in metagenomic data analysis is to perform quality control on the raw reads. For this, we use [fastp](https://github.com/OpenGene/fastp), an efficient tool for quality filtering, trimming adapters, and generating quality reports.
 Asumming all your samples (in fastq.gz format) are in the same folder.
 ```bash
 for i in `ls -1 *_1.fastq.gz | sed 's/_1.fastq.gz//'`; do  fastp -i $i\_1.fastq.gz -I $i\_2.fastq.gz --detect_adapter_for_pe -o trimmed/$i\_1.fq.gz -O trimmed/$i\_2.fq.gz -h trimmed/$i\_fastq.html -e 25
@@ -34,7 +34,7 @@ Kraken2 generates reports in kreport extension. We will use this files to create
 ```bash
 for i in `ls -1 *.kreport | sed 's/.kreport//' `; do bracken -r 100 -i $i\.kreport -o bracken/$i\.bracken -d /data/databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/bracken; done
 ```
-In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script combine_bracken_outputs: [combine bracken outputs](https://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.pyhttps://github.com/jenniferlu717/Bracken/blob/master/analysis_scripts/combine_bracken_outputs.py) 
+In the folder named bracken, we will have a .bracken file for ech sample. Those reports can be merged into a single file with the script combine_bracken_outputs: [combine bracken outputs](https://github.com/jenniferlu717/Bracken/tree/master/analysis_scripts) 
 
 ```bash
 python combine_bracken_outputs.py --files *.bracken -o bracken_results.tsv
