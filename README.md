@@ -30,7 +30,7 @@ Please see this [link](https://benlangmead.github.io/aws-indexes/k2) to select a
 for i in `ls -1 *_filtered.1.fq.gz | sed 's/_filtered.1.fq.gz//' `; do
 kraken2 --paired $i\_filtered.1.fq.gz $i\_filtered.2.fq.gz --classified-out $i\_gen#.fq --report $i\_gen.kreport --db databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/kraken2/gtdb_r207_v2_genomes/ --threads 36 --gzip-compressed --confidence 0.5; done
 ```
-Kraken2 generates reports in kreport extensio. We will use this files to create a matrix of read counts for each taxon across the samples wit bracken. 
+Kraken2 generates reports in kreport extension. We will use this files to create a matrix of read counts for each taxon across the samples with bracken. 
 ```bash
 for i in `ls -1 *.kreport | sed 's/.kreport//' `; do bracken -r 100 -i $i\.kreport -o bracken/$i\.bracken -d /data/databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/bracken; done
 ```
