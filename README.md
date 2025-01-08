@@ -9,7 +9,7 @@ for i in `ls -1 *_1.fastq.gz | sed 's/_1.fastq.gz//'`; do  fastp -i $i\_1.fastq.
 ```
 New data will be saved in a new folder named trimmed.
 
-Then use bowtie2 to remove reads associated with the human genome. Please review this link to download the indexed human genome. https://benlangmead.github.io/aws-indexes/bowtie
+Then use bowtie2 to remove reads associated with the human genome. Please review this [link](https://benlangmead.github.io/aws-indexes/bowtie)to download the indexed human genome. 
 ```bash
 for i in `ls -1 *_1.fastq.gz | sed 's/_1.fastq.gz//'`; do
 bowtie2 -p 8 -x databases/references/H.sapiens_hg19/bowtie2/hg19 \
@@ -25,7 +25,7 @@ Samples will be saved in a new folder named filtered.
 ## Taxonomic assignment and count of reads
 For this purpose we will use kraken2 to asign taxonomy to the reads of each sample. 
 Move into the filtered folder. 
-Please see this link to select and download an specific database to assign taxonomy. In our case we used a custom database. https://benlangmead.github.io/aws-indexes/k2
+Please see this [link](https://benlangmead.github.io/aws-indexes/k2) to select and download an specific database to assign taxonomy. In our case we used a custom database previously indexed with genomes from the [GTDB](https://gtdb.ecogenomic.org). 
 ```bash
 for i in `ls -1 *_filtered.1.fq.gz | sed 's/_filtered.1.fq.gz//' `; do
 kraken2 --paired $i\_filtered.1.fq.gz $i\_filtered.2.fq.gz --classified-out $i\_gen#.fq --report $i\_gen.kreport --db databases/gtdb/2023-04-25/databases/gtdb_r207_v2_genomes/kraken2/gtdb_r207_v2_genomes/ --threads 36 --gzip-compressed --confidence 0.5; done
