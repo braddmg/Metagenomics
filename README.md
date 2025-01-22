@@ -111,7 +111,7 @@ do
 abricate $i\.fa --db card > $i\.card
 ```
 ## Quatifying normalized abundance of ARGs in co-assemblies
-We first need to map contigs agaisnt the employed reads with bowtie2.
+First, index the metagenomic contigs and map the sample reads against these indexed contigs.
 
 ```bash
 #Create a mapping file of each metagnenome.
@@ -121,7 +121,7 @@ bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS22_filtered.1.fq.gz -2 
 bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS29_filtered.1.fq.gz -2 ../QC_samples/MS29_filtered.2.fq.gz -S mapping/S1_M1_2.sam
 bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS36_filtered.1.fq.gz -2 ../QC_samples/MS36_filtered.2.fq.gz -S mapping/S1_M1_3.sam
 ```
-We can now convert sam files to bam files.
+We can now convert sam to bam files.
 ```bash
 for i in `ls -1 ../QC_samples/*.sam | sed 's/.sam//'`
 do
@@ -130,7 +130,7 @@ anvi-init-bam mapping/$i\-RAW.bam -o mapping/$i\.bam
 rm mapping/$i\.sam mapping/$i\-RAW.bam
 done
 ```
-Now we will use a R script to extract coordinates of contigs that include the ARGs annotated by ABRicate. You can find the "resistance.csv" file in the repository.
+Use the R script below to extract the coordinates of ARG-containing regions from a CSV file (resistance.csv) annotated by ABRicate. For each sample, a region file (*_regions.txt) is created.
 ```R
 #Load libraries
 library(dplyr)
@@ -160,7 +160,7 @@ for (id in unique_ids) {
   cat("Created:", output_file, "\n")
 }
 ```
-Finally we can map de reads agaisnt the specific regions in metagenomic contigs containing the ARGs. You will need pysam, bowtie2 and samtools.
+Use the following Python script to count reads aligned to ARG regions and compute RPKM values. You will need [pysam](https://github.com/pysam-developers/pysam) and [samtools](https://github.com/samtools/samtools). 
 ```Python
 for i in `ls -1 *.bam | sed 's/.bam//'`
 do
