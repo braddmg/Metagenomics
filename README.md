@@ -110,7 +110,104 @@ for i in `ls -1 *.fa | sed 's/.fa//'`
 do
 abricate $i\.fa --db card > $i\.card
 ```
+## Quatifying normalized abundance of ARGs in co-assemblies
+We first need to map contigs agaisnt the employed reads with bowtie2.
 
+```bash
+#Create a mapping file of each metagnenome.
+bowtie2-build S1_M1.fa mapping/S1_M1
+#Mapping each sample reads agaisnt the metagenome.
+bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS22_filtered.1.fq.gz -2 ../QC_samples/MS22_filtered.2.fq.gz -S mapping/S1_M1_1.sam
+bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS29_filtered.1.fq.gz -2 ../QC_samples/MS29_filtered.2.fq.gz -S mapping/S1_M1_2.sam
+bowtie2 --threads 32 -x mapping/S1_M1 -1 ../QC_samples/MS36_filtered.1.fq.gz -2 ../QC_samples/MS36_filtered.2.fq.gz -S mapping/S1_M1_3.sam
+```
+We can now convert sam files to bam files.
+```bash
+for i in `ls -1 ../QC_samples/*.sam | sed 's/.sam//'`
+do
+samtools view -F 4 -bS mapping/$i\.sam > mapping/$i\-RAW.bam
+anvi-init-bam mapping/$i\-RAW.bam -o mapping/$i\.bam
+rm mapping/$i\.sam mapping/$i\-RAW.bam
+done
+```
+Now we will use a R script to extract coordinates of contigs that include the ARGs annotated by ABRicate. You can find the "resistance.csv" file in the repository.
+```R
+#Load libraries
+library(dplyr)
+library(readr)
+# Input file
+csv_file <- "resistencia.csv"
+# Read the CSV file
+data <- read_csv(csv_file, col_types = cols(
+  ID = col_character(),
+  SEQUENCE = col_character(),
+  START = col_integer(),
+  END = col_integer()
+))
+
+# Loop through unique IDs and create separate regions.txt files
+unique_ids <- unique(data$ID)
+for (id in unique_ids) {
+  # Filter rows for the current ID
+  subset_data <- data %>% filter(ID == id)
+  # Select and rename columns to match regions.txt format
+  regions <- subset_data %>% 
+    select(SEQUENCE, START, END) %>%
+    rename(Contig = SEQUENCE, Start = START, End = END)
+  # Write to regions.txt file
+  output_file <- paste0(id, "_regions.txt")
+  write_delim(regions, output_file, delim = "\t", col_names = FALSE)
+  cat("Created:", output_file, "\n")
+}
+```
+Finally we can map de reads agaisnt the specific regions in metagenomic contigs containing the ARGs. You will need pysam, bowtie2 and samtools.
+```Python
+for i in `ls -1 *.bam | sed 's/.bam//'`
+do
+  python3 - <<EOF
+import pysam
+i = "$i"
+regions_file = "${i}_regions.txt"
+bam_file = "${i}.bam"
+bam = pysam.AlignmentFile(bam_file, "rb")
+
+# Function to count reads in a specific region
+def count_reads(bam, contig, start, end):
+    count = 0
+    for read in bam.fetch(contig, start, end):
+        if not read.is_unmapped:  # Exclude unmapped reads
+            count += 1
+    return count
+# Calculate total mapped reads in BAM file
+def total_mapped_reads(bam):
+    return sum(1 for read in bam if not read.is_unmapped)
+# Get total mapped reads
+total_reads = total_mapped_reads(bam)
+
+# Read regions from file and save results
+output_file = f"{i}_read_counts_with_rpkm.txt"
+with open(regions_file, "r") as regions, open(output_file, "w") as output:
+    output.write("Contig\tStart\tEnd\tRead_Count\tRPKM\tTotal_Mapped_Reads\n")
+    for line in regions:
+        contig, start, end = line.strip().split("\t")
+        start, end = int(start), int(end)
+        region_length = end - start + 1
+        # Count reads for the region
+        read_count = count_reads(bam, contig, start, end)
+        # Calculate RPKM
+        if total_reads > 0:
+            rpkm = (read_count * 1e9) / (region_length * total_reads)
+        else:
+            rpkm = 0
+        # Save results to file
+        output.write(f"{contig}\t{start}\t{end}\t{read_count}\t{rpkm:.6f}\t{total_reads}\n")
+
+# Close BAM file
+bam.close()
+print(f"Processed {bam_file}, results saved to {output_file}")
+EOF
+done
+```
 ## Assigning taxonomy to metagenomic contigs
 For assigning taxonomy to metagenomic contigs we will use [Kaiju](https://github.com/bioinformatics-centre/kaiju) tool. This tool assigns the closest taxonomy to each contig in a metagenomic assembly using protein-level classification and various databases. 
 In this example we will employ the SwissProt database. For instructions on indexing or downloading databases, refer to the [Kaiju github repository](https://github.com/bioinformatics-centre/kaiju).
