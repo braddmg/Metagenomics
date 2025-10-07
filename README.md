@@ -1,5 +1,5 @@
 # Metagenomics
-Pipeline for metagenomic analyses of water samples
+Pipeline for metagenomic analyses
 
 ## Quality control
 The first step in metagenomic data analysis is to perform quality control on the raw reads. For this, we use [fastp](https://github.com/OpenGene/fastp), an efficient tool for quality filtering, trimming adapters, and generating quality reports.
@@ -10,9 +10,16 @@ for i in `ls -1 *_1.fastq.gz | sed 's/_1.fastq.gz//'`; do  fastp -i $i\_1.fastq.
 New data will be saved in a new folder named trimmed.
 
 Then use bowtie2 to remove reads associated with the human genome. Please review this [link](https://benlangmead.github.io/aws-indexes/bowtie)to download the indexed human genome. 
+
+```bash
+#Download hg19
+wget https://genome-idx.s3.amazonaws.com/bt/hg19.zip
+unzip hg19.zip
+```
+
 ```bash
 for i in `ls -1 *_1.fastq.gz | sed 's/_1.fastq.gz//'`; do
-bowtie2 -p 8 -x databases/references/H.sapiens_hg19/bowtie2/hg19 \
+bowtie2 -p 8 -x databases/references/H.sapiens_hg19/bowtie2/hg19 \ 
   -1 trimmed/$i\_1.fq.gz \
   -2 trimmed/$i\_2.fq.gz \
 --very-sensitive-local \
