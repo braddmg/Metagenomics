@@ -222,5 +222,51 @@ In this example we will employ the SwissProt database. For instructions on index
 kaiju -z 32 -t database/swissprot_nodes.dmp -f database/kaiju_db_refseq.fmi -i metagenomes.fa -o kaiju.out -v
 ```
 
+## Binning step
+MetaWRAP binning: binning process with metabat2, maxbin2 and concoct
+```bash
+cd /home/rubi.robles/Virilla/02.Metagenomes
+file=$(sed -n ${SLURM_ARRAY_TASK_ID}p nameList.txt)
+metawrap binning -o ${file}-bins -t $SLURM_NTASKS -a ${file}.fa --metabat2 --maxbin2 --concoct --run-checkm ../01.Raw/${file}/*_[1,2].fastq.gz
+```
+in binning.sh from the metawrap module change the following lines so you can read compressed files
+```bash
+if [ $read_type = paired ]; then
+	# check for at least one pair of read fastq files:
+	F="no"; R="no"
+	for num in "$@"; do
+		if [[ $num == @("_1.fastq"|*"_1.fastq.gz"|*"_R1.fastq.gz"|*"_R1.fastq"|"*"_R1.fq"|"*"_R1.fq.gz") ]]; then F="yes"; fi
+		if [[ $num == @("_2.fastq"|*"_2.fastq.gz"|*"_R2.fastq.gz"|*"_R2.fastq"|"*"_R2.fq"|"*"_R2.fq.gz") ]]; then R="yes"; fi
+	done
+```
+## Binning refinement
+consolidate bins, setting minimum completion at 70% and maximum contamination at 10%.
+```bash
+for folder in *-bins
+do
+    sample=${folder%%-*}   # take everything before the first "-"
+    echo "processing ${sample}"
 
+    metawrap bin_refinement \
+        -o ${folder}/${sample}_BIN_REFINEMENT \
+        -t ${SLURM_NTASKS} \
+        -A ${folder}/metabat2_bins/ \
+        -B ${folder}/maxbin2_bins/ \
+        -C ${folder}/concoct_bins/ \
+        -c 70 -x 10
+done
+```
 
+## Dereplication
+Drep 99%: dereplicate the MAGs with drep tool
+```bash
+dRep dereplicate dRep_results/ -p 64 -g /home/rubi.robles/Virilla/HighMid_MAGs/*.fa -sa 0.99 
+```
+
+## Abundance (RPKM) calculatin with coverM
+```bash
+coverm genome --genome-fasta-directory /home/rubi.robles/Virilla/HighMid_MAGs/dRep_results/dereplicated_genomes -x fa --coupled $(awk -v dir="/home/rubi.robles/Virilla/01.Raw" '{print dir "/" $1, dir "/" $2}' paired_reads.txt) \
+--output-file mag_abundance.tsv \
+--threads 64 \
+--methods rpkm relative_abundance
+```
