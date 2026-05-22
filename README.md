@@ -240,7 +240,7 @@ if [ $read_type = paired ]; then
 	done
 ```
 ## Binning refinement
-consolidate bins, setting minimum completion at 70% and maximum contamination at 10%.
+consolidate bins
 ```bash
 for folder in *-bins
 do
@@ -253,8 +253,11 @@ do
         -A ${folder}/metabat2_bins/ \
         -B ${folder}/maxbin2_bins/ \
         -C ${folder}/concoct_bins/ \
-        -c 70 -x 10
 done
+```
+## Checkm2 
+```bash
+checkm2 predict --threads 30 -x .fa --input /home/rubi.robles/Virilla/Bin_Refinement --output-directory CheckM2_Results
 ```
 
 ## Dereplication
@@ -269,4 +272,36 @@ coverm genome --genome-fasta-directory /home/rubi.robles/Virilla/HighMid_MAGs/dR
 --output-file mag_abundance.tsv \
 --threads 64 \
 --methods rpkm relative_abundance
+```
+## ANVI’o: estimate metabolic completeness
+```bash
+# --- Define input/output paths ---
+INPUT_DIR=/home/rubi.robles/Virilla/HighMid_MAGs/dRep_results/dereplicated_genomes
+OUTPUT_DIR=/home/rubi.robles/Virilla/Anvio/results
+
+# --- Move to results folder for output ---
+cd $OUTPUT_DIR
+# --- Run ANVI’o on each .fa file ---
+for i in $(ls ${INPUT_DIR}/*.fa | xargs -n 1 basename | awk 'BEGIN{FS=".fa"}{print $1}')
+do
+    anvi-gen-contigs-database -f ${INPUT_DIR}/$i.fa -o ${OUTPUT_DIR}/$i.db
+    anvi-run-hmms -c ${OUTPUT_DIR}/$i.db
+    anvi-run-pfams -T 64 --pfam-data-dir /home/public/public_data/Anvio/Pfam-37.4/ -c ${OUTPUT_DIR}/$i.db
+    anvi-run-kegg-kofams -c ${OUTPUT_DIR}/$i.db -T 64
+    anvi-export-functions --annotation-sources Pfam -c ${OUTPUT_DIR}/$i.db -o ${OUTPUT_DIR}/$i-pfams.txt
+done
+
+# --- Create external-genomes file ---
+
+cd $OUTPUT_DIR
+ls -1 *.db > path.txt
+sed -i '1s/^/contigs_db_path\n/' path.txt
+ls -1 *.db | sed 's/.db//' > name.txt
+sed -i 's/[.]/_/g; s/-/_/g; s/,/_/g; s/ /_/g' name.txt
+sed -i '1s/^/name\n/' name.txt
+paste name.txt path.txt > external-genomes.txt
+rm name.txt path.txt
+
+# --- Run anvi-estimate-metabolism ---
+anvi-estimate-metabolism -e external-genomes.txt --module-completion-threshold 0.5
 ```
